@@ -19,6 +19,29 @@ function AdminAnalytics() {
   const fetchData = async () => {
     try {
       const res = await api.getAnalytics();
+      
+      const filledTrend = [];
+      const today = new Date();
+      for (let i = 29; i >= 0; i--) {
+        const targetDate = new Date();
+        targetDate.setDate(today.getDate() - i);
+        targetDate.setHours(0,0,0,0);
+        
+        const existingData = res.trend.find(t => {
+          const d = new Date(t.date);
+          return d.getDate() === targetDate.getDate() && 
+                 d.getMonth() === targetDate.getMonth() && 
+                 d.getFullYear() === targetDate.getFullYear();
+        });
+
+        if (existingData) {
+          filledTrend.push({ ...existingData, date: targetDate.toISOString() });
+        } else {
+          filledTrend.push({ date: targetDate.toISOString(), generations: 0, avg_rating: 0 });
+        }
+      }
+      res.trend = filledTrend;
+
       setData(res);
       const tpls = await api.getTemplates();
       setTemplates(tpls);
@@ -116,13 +139,18 @@ function AdminAnalytics() {
           </div>
           <div className="panel-body">
             {/* Simple bar chart representation */}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', height: '200px', gap: '8px', paddingTop: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', height: '220px', gap: '2px', paddingTop: '20px', overflow: 'hidden', paddingBottom: '10px' }}>
               {data.trend.length > 0 ? data.trend.map((day, idx) => {
                 const max = Math.max(...data.trend.map(d => d.generations));
                 const height = max > 0 ? (day.generations / max) * 100 : 0;
                 return (
-                  <div key={idx} style={{ flex: 1, maxWidth: '40px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ width: '100%', height: `${height}%`, background: 'var(--primary)', borderRadius: '4px 4px 0 0', opacity: 0.8 }} title={`${new Date(day.date).toLocaleDateString()}: ${day.generations}`}></div>
+                  <div key={idx} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'flex-end' }}>
+                      <div style={{ width: '100%', height: `${height}%`, background: 'var(--primary)', borderRadius: '4px 4px 0 0', opacity: height > 0 ? 0.8 : 0.1 }} title={`${new Date(day.date).toLocaleDateString()}: ${day.generations}`}></div>
+                    </div>
+                    <span style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                      {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
                   </div>
                 );
               }) : <div style={{ color: 'var(--text-secondary)' }}>No data available</div>}

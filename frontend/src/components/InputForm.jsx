@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Sparkles, FileText, FileSearch, Banknote } from 'lucide-react';
+import { Sparkles, FileText, FileSearch, Banknote, UploadCloud } from 'lucide-react';
 
 function InputForm({ onGenerate, loading, initialData = null }) {
   const [formData, setFormData] = useState({
@@ -9,11 +9,69 @@ function InputForm({ onGenerate, loading, initialData = null }) {
     clientFacts: '',
     strategy: '',
     clientName: '',
-    noticeRef: ''
+    noticeRef: '',
+    language: 'English'
   });
   
   const [templates, setTemplates] = useState([]);
   const [errors, setErrors] = useState({});
+  const [extracting, setExtracting] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleDrag = function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = function(e) {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleFile = async (file) => {
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+       alert("Please upload a PDF or JPG/PNG image.");
+       return;
+    }
+
+    setExtracting(true);
+    try {
+      const extractedData = await api.extractDetails(file);
+      setFormData(prev => ({
+         ...prev,
+         noticeType: extractedData.noticeType || prev.noticeType,
+         issue: extractedData.issue || prev.issue,
+         clientFacts: extractedData.clientFacts || prev.clientFacts,
+         strategy: extractedData.strategy ? extractedData.strategy.toLowerCase() : prev.strategy,
+         clientName: extractedData.clientName || prev.clientName,
+         noticeRef: extractedData.noticeRef || prev.noticeRef,
+         language: prev.language
+      }));
+      setErrors({});
+    } catch (err) {
+      console.error("Extraction error", err);
+      alert("Failed to extract details from the document.");
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   useEffect(() => {
     // Load templates
@@ -71,6 +129,36 @@ function InputForm({ onGenerate, loading, initialData = null }) {
       <div className="panel-body form-layout">
         <form onSubmit={handleSubmit} className="form-main">
           
+          <div 
+            className={`dropzone ${dragActive ? 'drag-active' : ''}`} 
+            onDragEnter={handleDrag} 
+            onDragLeave={handleDrag} 
+            onDragOver={handleDrag} 
+            onDrop={handleDrop}
+          >
+            <input 
+              type="file" 
+              id="file-upload" 
+              multiple={false} 
+              onChange={handleFileChange} 
+              accept=".pdf, image/jpeg, image/png"
+            />
+            <label htmlFor="file-upload" className="dropzone-label">
+              {extracting ? (
+                <div className="extraction-loader">
+                  <div className="loader"></div>
+                  <p>AI is reading the document and extracting details...</p>
+                </div>
+              ) : (
+                <>
+                  <UploadCloud size={32} style={{ color: 'var(--primary)', marginBottom: '0.5rem' }} />
+                  <p><strong>Upload Tax Notice (PDF/JPG)</strong></p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Drag & drop or click to browse. AI will auto-fill the form.</p>
+                </>
+              )}
+            </label>
+          </div>
+
           <div className="form-row">
             <div className="form-group" style={{ flex: '1', marginBottom: '0' }}>
               <label className="form-label">Client Name</label>
@@ -161,6 +249,34 @@ function InputForm({ onGenerate, loading, initialData = null }) {
               <option value="seek time extension">Seek Time Extension</option>
             </select>
             {errors.strategy && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.strategy}</span>}
+          </div>
+
+          <div className="form-group" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem', background: 'var(--surface-color)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--surface-border)' }}>
+            <label className="form-label" style={{ marginBottom: 0, fontWeight: '600' }}>Output Language:</label>
+            <div style={{ display: 'flex', gap: '1.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input 
+                  type="radio" 
+                  name="language" 
+                  value="English" 
+                  checked={formData.language === 'English'} 
+                  onChange={handleChange} 
+                  style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                /> 
+                English
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input 
+                  type="radio" 
+                  name="language" 
+                  value="Hindi" 
+                  checked={formData.language === 'Hindi'} 
+                  onChange={handleChange} 
+                  style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
+                /> 
+                Hindi
+              </label>
+            </div>
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={loading}>

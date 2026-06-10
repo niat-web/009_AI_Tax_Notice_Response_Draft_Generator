@@ -7,6 +7,16 @@ export const api = {
     const response = await axios.post(`${API_BASE_URL}/generate`, data);
     return response.data;
   },
+  extractDetails: async (file) => {
+    const formData = new FormData();
+    formData.append('document', file);
+    const response = await axios.post(`${API_BASE_URL}/extract`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
   getHistory: async () => {
     const response = await axios.get(`${API_BASE_URL}/history`);
     return response.data;

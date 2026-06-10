@@ -1,13 +1,27 @@
 const express = require('express');
+const multer = require('multer');
 const { pool } = require('./database');
-const { generateDraftLetter } = require('./aiService');
+const { generateDraftLetter, extractNoticeDetails } = require('./aiService');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-// Generate new draft
+router.post('/extract', upload.single('document'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No document file provided.' });
+    }
+    const extractedData = await extractNoticeDetails(req.file.buffer, req.file.mimetype);
+    res.json(extractedData);
+  } catch (error) {
+    console.error('Extraction Error:', error);
+    res.status(500).json({ error: 'Failed to extract document details.' });
+  }
+});
+
 router.post('/generate', async (req, res) => {
   try {
-    const { noticeType, issue, clientFacts, strategy, clientName, noticeRef } = req.body;
+    const { noticeType, issue, clientFacts, strategy, clientName, noticeRef, language = 'English' } = req.body;
 
     if (!noticeType || !issue || !clientFacts || !strategy || !clientName || !noticeRef) {
       return res.status(400).json({ error: 'Missing required fields.' });
@@ -15,14 +29,14 @@ router.post('/generate', async (req, res) => {
 
     // Insert into notice_inputs
     const [inputResult] = await pool.query(
-      `INSERT INTO notice_inputs (type, issue, client_facts, strategy, client_name, notice_ref) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [noticeType, issue, clientFacts, strategy, clientName, noticeRef]
+      `INSERT INTO notice_inputs (type, issue, client_facts, strategy, client_name, notice_ref, language) 
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [noticeType, issue, clientFacts, strategy, clientName, noticeRef, language]
     );
     const inputId = inputResult.insertId;
 
     // Call AI Service
-    const aiResponse = await generateDraftLetter(noticeType, issue, clientFacts, strategy, clientName, noticeRef);
+    const aiResponse = await generateDraftLetter(noticeType, issue, clientFacts, strategy, clientName, noticeRef, language);
 
     // Save to generated_letters
     const [letterResult] = await pool.query(
@@ -52,7 +66,7 @@ router.get('/history', async (req, res) => {
       JOIN notice_inputs ni ON gl.input_id = ni.id
       ORDER BY gl.timestamp DESC
     `);
-    
+
     // map to create a preview
     const history = rows.map(row => ({
       ...row,
@@ -74,9 +88,9 @@ router.get('/history/:id', async (req, res) => {
       JOIN notice_inputs ni ON gl.input_id = ni.id
       WHERE gl.id = ?
     `, [req.params.id]);
-    
+
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
-    
+
     const [feedback] = await pool.query('SELECT rating, thumbs_up_down FROM quality_ratings WHERE letter_id = ?', [req.params.id]);
     const generation = rows[0];
     generation.feedback = feedback.length > 0 ? feedback[0] : null;
@@ -93,12 +107,12 @@ router.post('/history/:id/edit', async (req, res) => {
   try {
     const { newText } = req.body;
     const letterId = req.params.id;
-    
+
     if (!newText) return res.status(400).json({ error: 'newText is required.' });
 
     // Insert into draft_history
     await pool.query('INSERT INTO draft_history (letter_id, edited_text) VALUES (?, ?)', [letterId, newText]);
-    
+
     // Update generated_letters
     await pool.query('UPDATE generated_letters SET full_letter_text = ? WHERE id = ?', [newText, letterId]);
 
@@ -113,7 +127,7 @@ router.post('/history/:id/edit', async (req, res) => {
 router.post('/feedback', async (req, res) => {
   try {
     const { generation_id, rating, thumbs_up_down } = req.body;
-    
+
     // generation_id maps to letter_id in our new schema
     if (!generation_id || rating === undefined) {
       return res.status(400).json({ error: 'generation_id and rating are required.' });
@@ -136,7 +150,7 @@ router.get('/admin/analytics', async (req, res) => {
   try {
     const [totalGens] = await pool.query('SELECT COUNT(*) as count FROM generated_letters');
     const [avgRating] = await pool.query('SELECT AVG(rating) as avg_rating FROM quality_ratings');
-    
+
     const [topInputs] = await pool.query(`
       SELECT ni.type as notice_type, COUNT(*) as count 
       FROM notice_inputs ni

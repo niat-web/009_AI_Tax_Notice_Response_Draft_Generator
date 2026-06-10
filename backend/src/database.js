@@ -37,9 +37,17 @@ async function initializeDatabase() {
         strategy VARCHAR(255) NOT NULL,
         client_name VARCHAR(255) NOT NULL,
         notice_ref VARCHAR(255) NOT NULL,
+        language VARCHAR(50) DEFAULT 'English',
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
+
+    // Try to add the column if the table already exists (ignore error if it already exists)
+    try {
+      await promisePool.query("ALTER TABLE notice_inputs ADD COLUMN language VARCHAR(50) DEFAULT 'English'");
+    } catch (e) {
+      // Column might already exist, which is fine
+    }
 
     await promisePool.query(`
       CREATE TABLE IF NOT EXISTS generated_letters (
