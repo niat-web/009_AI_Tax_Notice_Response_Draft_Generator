@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
-import { Sparkles, FileText, FileSearch, Banknote, UploadCloud } from 'lucide-react';
+import { Sparkles, FileText, FileSearch, Banknote, UploadCloud, Mic } from 'lucide-react';
 
 function InputForm({ onGenerate, loading, initialData = null }) {
   const [formData, setFormData] = useState({
@@ -17,6 +17,103 @@ function InputForm({ onGenerate, loading, initialData = null }) {
   const [errors, setErrors] = useState({});
   const [extracting, setExtracting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  
+  const [isListening, setIsListening] = useState(false);
+  const [voiceStep, setVoiceStep] = useState(null);
+
+  const voiceQuestions = [
+    { field: 'clientName', text: "What is the client's name?" },
+    { field: 'noticeRef', text: "What is the notice reference number?" },
+    { field: 'noticeType', text: "What type of notice is this?" },
+    { field: 'issue', text: "Can you briefly describe the specific issue raised?" },
+    { field: 'clientFacts', text: "What are the relevant facts and amounts?" },
+    { field: 'strategy', text: "Finally, what is the desired response strategy? For example: accept with payment, or contest with explanation?" }
+  ];
+
+  const startVoiceAssistant = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert("Your browser does not support Speech Recognition. Please try Google Chrome or Edge.");
+      return;
+    }
+    setIsListening(true);
+    askQuestion(0);
+  };
+
+  const askQuestion = (stepIndex) => {
+    if (stepIndex >= voiceQuestions.length) {
+      setIsListening(false);
+      setVoiceStep(null);
+      speak("All details captured. You can now generate the draft.");
+      return;
+    }
+
+    setVoiceStep(stepIndex);
+    const q = voiceQuestions[stepIndex];
+    speak(q.text, () => listenForAnswer(stepIndex));
+  };
+
+  const speak = (text, onEndCallback) => {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    if (onEndCallback) {
+      utterance.onend = () => {
+        // Small delay before listening to avoid echo
+        setTimeout(onEndCallback, 300);
+      };
+    }
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const listenForAnswer = (stepIndex) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      let transcript = event.results[0][0].transcript;
+      
+      // Basic normalization for strategy dropdown
+      if (voiceQuestions[stepIndex].field === 'strategy') {
+        transcript = transcript.toLowerCase();
+        if (transcript.includes('accept')) transcript = 'accept with payment';
+        else if (transcript.includes('contest')) transcript = 'contest with explanation';
+        else if (transcript.includes('time') || transcript.includes('extension')) transcript = 'seek time extension';
+      }
+      
+      const field = voiceQuestions[stepIndex].field;
+      setFormData(prev => ({ ...prev, [field]: transcript }));
+      
+      // Move to next question
+      setTimeout(() => askQuestion(stepIndex + 1), 500);
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech error:", event.error);
+      if (event.error === 'no-speech') {
+         speak("I didn't catch that. Please try speaking again.", () => listenForAnswer(stepIndex));
+      } else {
+         setIsListening(false);
+         setVoiceStep(null);
+         
+         let errorMsg = "Microphone error. Please try typing instead.";
+         if (event.error === 'not-allowed') {
+            errorMsg = "Microphone access was denied. Please click the lock icon in your browser's address bar to allow microphone access.";
+         } else if (event.error === 'network') {
+            errorMsg = "Speech recognition requires an active internet connection. Please check your network.";
+         } else if (event.error === 'audio-capture') {
+            errorMsg = "No microphone was found on your system. Please ensure a microphone is connected.";
+         }
+         
+         alert(errorMsg + ` (Error Code: ${event.error})`);
+      }
+    };
+
+    recognition.start();
+  };
 
   const handleDrag = function(e) {
     e.preventDefault();
@@ -157,6 +254,39 @@ function InputForm({ onGenerate, loading, initialData = null }) {
                 </>
               )}
             </label>
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--surface-border)', width: '100px' }} />
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>OR</span>
+              <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--surface-border)', width: '100px' }} />
+            </div>
+            
+            <button 
+              type="button" 
+              onClick={() => isListening ? setIsListening(false) : startVoiceAssistant()} 
+              className="btn"
+              style={{ 
+                marginTop: '1rem',
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                padding: '10px 20px', 
+                borderRadius: '30px', 
+                border: '1px solid ' + (isListening ? 'var(--danger)' : 'var(--primary)'), 
+                color: isListening ? 'white' : 'var(--primary)', 
+                background: isListening ? 'var(--danger)' : 'transparent', 
+                fontWeight: '600',
+                transition: 'all 0.3s ease',
+                boxShadow: isListening ? '0 0 15px rgba(239, 68, 68, 0.4)' : 'none'
+              }}
+            >
+              <Mic size={18} />
+              {isListening 
+                ? (voiceStep !== null ? voiceQuestions[voiceStep].text : "Stop Listening") 
+                : "Talk to AI Assistant"}
+            </button>
           </div>
 
           <div className="form-row">

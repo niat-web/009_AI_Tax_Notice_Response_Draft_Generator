@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Download, Share2, ThumbsUp, ThumbsDown, Star, RefreshCw } from 'lucide-react';
+import { 
+  EmailShareButton, 
+  EmailIcon, 
+  WhatsappShareButton, 
+  WhatsappIcon, 
+  TelegramShareButton, 
+  TelegramIcon 
+} from 'react-share';
 import jsPDF from 'jspdf';
 import { api } from '../api';
 
@@ -10,6 +18,7 @@ function OutputDisplay({ draft, onRegenerate, loading, currentInputs }) {
   const [savedFeedback, setSavedFeedback] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [editSaved, setEditSaved] = useState(false);
+  const [showSharePopup, setShowSharePopup] = useState(false);
 
   useEffect(() => {
     if (draft) {
@@ -18,6 +27,7 @@ function OutputDisplay({ draft, onRegenerate, loading, currentInputs }) {
       setThumbs(null);
       setSavedFeedback(false);
       setEditSaved(false);
+      setShowSharePopup(false);
     }
   }, [draft]);
 
@@ -76,8 +86,7 @@ function OutputDisplay({ draft, onRegenerate, loading, currentInputs }) {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(text);
-    alert('Content copied to clipboard for sharing via WhatsApp or Email.');
+    setShowSharePopup(!showSharePopup);
   };
 
   const handleRating = async (val) => {
@@ -146,9 +155,54 @@ function OutputDisplay({ draft, onRegenerate, loading, currentInputs }) {
           <button className="btn btn-secondary" onClick={handleDownloadPdf} title="Download .pdf">
             <Download size={16} /> .PDF
           </button>
-          <button className="btn btn-secondary" onClick={handleShare} title="Share">
-            <Share2 size={16} /> Share
-          </button>
+          
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <button className="btn btn-secondary" onClick={handleShare} title="Share">
+              <Share2 size={16} /> Share
+            </button>
+            {showSharePopup && (
+              <div className="fade-in" style={{ 
+                position: 'absolute', 
+                bottom: '120%', 
+                left: '50%', 
+                transform: 'translateX(-50%)', 
+                background: 'var(--surface-color)', 
+                border: '1px solid var(--surface-border)', 
+                borderRadius: '8px', 
+                padding: '0.75rem', 
+                display: 'flex', 
+                gap: '0.75rem', 
+                boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                zIndex: 10
+              }}>
+                <WhatsappShareButton 
+                  url=" " 
+                  title={`*Draft Tax Response for ${currentInputs?.clientName || 'Client'}*\n\n${text}`} 
+                  separator=""
+                  onClick={() => setShowSharePopup(false)}
+                >
+                  <WhatsappIcon size={36} round />
+                </WhatsappShareButton>
+                
+                <TelegramShareButton 
+                  url=" " 
+                  title={`Draft Tax Response for ${currentInputs?.clientName || 'Client'}\n\n${text}`}
+                  onClick={() => setShowSharePopup(false)}
+                >
+                  <TelegramIcon size={36} round />
+                </TelegramShareButton>
+
+                <EmailShareButton 
+                  url=" " 
+                  subject={`Draft Response for ${currentInputs?.clientName || 'Notice'}`} 
+                  body={text}
+                  onClick={() => setShowSharePopup(false)}
+                >
+                  <EmailIcon size={36} round />
+                </EmailShareButton>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="actions-group" style={{ alignItems: 'center' }}>
