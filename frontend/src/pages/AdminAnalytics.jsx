@@ -145,8 +145,22 @@ function AdminAnalytics() {
                 const height = max > 0 ? (day.generations / max) * 100 : 0;
                 return (
                   <div key={idx} style={{ flex: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                    <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'flex-end', position: 'relative' }}>
                       <div style={{ width: '100%', height: `${height}%`, background: 'var(--primary)', borderRadius: '4px 4px 0 0', opacity: height > 0 ? 0.8 : 0.1 }} title={`${new Date(day.date).toLocaleDateString()}: ${day.generations}`}></div>
+                      {day.generations > 0 && (
+                        <span style={{ 
+                          position: 'absolute', 
+                          bottom: `${height}%`, 
+                          left: '50%', 
+                          transform: 'translateX(-50%)', 
+                          fontSize: '0.65rem', 
+                          fontWeight: 'bold', 
+                          color: 'var(--text-primary)', 
+                          marginBottom: '2px' 
+                        }}>
+                          {day.generations}
+                        </span>
+                      )}
                     </div>
                     <span style={{ fontSize: '0.55rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
                       {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
