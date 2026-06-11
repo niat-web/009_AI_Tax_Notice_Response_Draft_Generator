@@ -1,7 +1,7 @@
 const mysql = require('mysql2');
 require('dotenv').config();
 
-const pool = mysql.createPool({
+const poolConfig = process.env.DATABASE_URL ? process.env.DATABASE_URL : {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
@@ -10,20 +10,27 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
-});
+};
+
+const pool = mysql.createPool(poolConfig);
 
 const promisePool = pool.promise();
 
 async function initializeDatabase() {
   try {
-    const connection = await mysql.createConnection({
+    const connectionConfig = process.env.DATABASE_URL ? process.env.DATABASE_URL : {
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || '',
       port: process.env.DB_PORT || 3306
-    }).promise();
+    };
     
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME || 'tax_notice_db'}\``);
+    const connection = await mysql.createConnection(connectionConfig).promise();
+    
+    // If using individual variables, create the DB. If using URL, the DB is already in the URL (e.g. Railway).
+    if (!process.env.DATABASE_URL) {
+      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME || 'tax_notice_db'}\``);
+    }
     await connection.end();
 
     // Drop old tables if they exist to start fresh according to the new schema
