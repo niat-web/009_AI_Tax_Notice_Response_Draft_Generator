@@ -7,7 +7,7 @@ if (typeof pdfParse !== 'function' && typeof pdfParse.PDFParse === 'function') {
 
 require('dotenv').config();
 
-const groq = process.env.Groq_Api_Key ? new Groq({ apiKey: process.env.Groq_Api_Key }) : null;
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
 // Prompt v4 according to the plan
@@ -47,11 +47,11 @@ CRITICAL: The entire generated response letter MUST be written entirely in ${lan
 
   try {
     const modelCandidates = [
+      "llama-3.3-70b-versatile",
       "llama-3.1-8b-instant",
-      'gemini-2.5-flash',
       'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-pro-latest'
+      'gemini-1.5-pro',
+      'gemini-1.5-flash'
     ].filter(Boolean);
 
     let result = null;
@@ -111,7 +111,7 @@ CRITICAL: The entire generated response letter MUST be written entirely in ${lan
     };
   } catch (error) {
     console.error("API Error:", error);
-    if (error.status === 401 || (!process.env.Groq_Api_Key && !process.env.GEMINI_API_KEY)) {
+    if (error.status === 401 || (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY)) {
       console.log("Using fallback mock response since API call failed (likely missing/invalid key).");
       return {
         text: `To
@@ -165,8 +165,10 @@ Output ONLY valid JSON. Do not include markdown formatting like \`\`\`json.`;
 async function extractNoticeDetails(fileBuffer, mimeType) {
   try {
     const modelCandidates = [
+      "llama-3.3-70b-versatile",
       "llama-3.1-8b-instant",
-      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro',
       'gemini-1.5-flash'
     ].filter(Boolean);
 
@@ -264,7 +266,7 @@ async function extractNoticeDetails(fileBuffer, mimeType) {
 
   } catch (error) {
     console.error("Extraction API Error:", error);
-    if (error.status === 401 || (!process.env.Groq_Api_Key && !process.env.GEMINI_API_KEY)) {
+    if (error.status === 401 || (!process.env.GROQ_API_KEY && !process.env.GEMINI_API_KEY)) {
       console.log("Using fallback mock extraction since API call failed.");
       return {
         noticeType: "Income Tax Scrutiny",
