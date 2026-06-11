@@ -12,19 +12,19 @@ function InputForm({ onGenerate, loading, initialData = null }) {
     noticeRef: '',
     language: 'English'
   });
-  
+
   const [templates, setTemplates] = useState([]);
   const [errors, setErrors] = useState({});
   const [extracting, setExtracting] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  
+
   const [isListening, setIsListening] = useState(false);
   const [voiceStep, setVoiceStep] = useState(null);
 
   const voiceQuestions = [
     { field: 'clientName', text: "What is the client's name?" },
     { field: 'noticeRef', text: "What is the notice reference number?" },
-    { field: 'noticeType', text: "What type of notice is this?" },
+    { field: 'noticeType', text: "What type of notice is this? For example: GST Audit Notice, Income Tax Scrutiny, TDS Demand, Advance Tax Demand, or Assessment Order?" },
     { field: 'issue', text: "Can you briefly describe the specific issue raised?" },
     { field: 'clientFacts', text: "What are the relevant facts and amounts?" },
     { field: 'strategy', text: "Finally, what is the desired response strategy? For example: accept with payment, or contest with explanation?" }
@@ -55,7 +55,7 @@ function InputForm({ onGenerate, loading, initialData = null }) {
   const speak = (text, onEndCallback) => {
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
-    
+
     const utterance = new SpeechSynthesisUtterance(text);
     if (onEndCallback) {
       utterance.onend = () => {
@@ -75,7 +75,7 @@ function InputForm({ onGenerate, loading, initialData = null }) {
 
     recognition.onresult = (event) => {
       let transcript = event.results[0][0].transcript;
-      
+
       // Basic normalization for strategy dropdown
       if (voiceQuestions[stepIndex].field === 'strategy') {
         transcript = transcript.toLowerCase();
@@ -83,10 +83,10 @@ function InputForm({ onGenerate, loading, initialData = null }) {
         else if (transcript.includes('contest')) transcript = 'contest with explanation';
         else if (transcript.includes('time') || transcript.includes('extension')) transcript = 'seek time extension';
       }
-      
+
       const field = voiceQuestions[stepIndex].field;
       setFormData(prev => ({ ...prev, [field]: transcript }));
-      
+
       // Move to next question
       setTimeout(() => askQuestion(stepIndex + 1), 500);
     };
@@ -94,28 +94,28 @@ function InputForm({ onGenerate, loading, initialData = null }) {
     recognition.onerror = (event) => {
       console.error("Speech error:", event.error);
       if (event.error === 'no-speech') {
-         speak("I didn't catch that. Please try speaking again.", () => listenForAnswer(stepIndex));
+        speak("I didn't catch that. Please try speaking again.", () => listenForAnswer(stepIndex));
       } else {
-         setIsListening(false);
-         setVoiceStep(null);
-         
-         let errorMsg = "Microphone error. Please try typing instead.";
-         if (event.error === 'not-allowed') {
-            errorMsg = "Microphone access was denied. Please click the lock icon in your browser's address bar to allow microphone access.";
-         } else if (event.error === 'network') {
-            errorMsg = "Speech recognition requires an active internet connection. Please check your network.";
-         } else if (event.error === 'audio-capture') {
-            errorMsg = "No microphone was found on your system. Please ensure a microphone is connected.";
-         }
-         
-         alert(errorMsg + ` (Error Code: ${event.error})`);
+        setIsListening(false);
+        setVoiceStep(null);
+
+        let errorMsg = "Microphone error. Please try typing instead.";
+        if (event.error === 'not-allowed') {
+          errorMsg = "Microphone access was denied. Please click the lock icon in your browser's address bar to allow microphone access.";
+        } else if (event.error === 'network') {
+          errorMsg = "Speech recognition requires an active internet connection. Please check your network.";
+        } else if (event.error === 'audio-capture') {
+          errorMsg = "No microphone was found on your system. Please ensure a microphone is connected.";
+        }
+
+        alert(errorMsg + ` (Error Code: ${event.error})`);
       }
     };
 
     recognition.start();
   };
 
-  const handleDrag = function(e) {
+  const handleDrag = function (e) {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -125,7 +125,7 @@ function InputForm({ onGenerate, loading, initialData = null }) {
     }
   };
 
-  const handleDrop = function(e) {
+  const handleDrop = function (e) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -134,7 +134,7 @@ function InputForm({ onGenerate, loading, initialData = null }) {
     }
   };
 
-  const handleFileChange = function(e) {
+  const handleFileChange = function (e) {
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
       handleFile(e.target.files[0]);
@@ -144,22 +144,22 @@ function InputForm({ onGenerate, loading, initialData = null }) {
   const handleFile = async (file) => {
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png'];
     if (!validTypes.includes(file.type)) {
-       alert("Please upload a PDF or JPG/PNG image.");
-       return;
+      alert("Please upload a PDF or JPG/PNG image.");
+      return;
     }
 
     setExtracting(true);
     try {
       const extractedData = await api.extractDetails(file);
       setFormData(prev => ({
-         ...prev,
-         noticeType: extractedData.noticeType || prev.noticeType,
-         issue: extractedData.issue || prev.issue,
-         clientFacts: extractedData.clientFacts || prev.clientFacts,
-         strategy: extractedData.strategy ? extractedData.strategy.toLowerCase() : prev.strategy,
-         clientName: extractedData.clientName || prev.clientName,
-         noticeRef: extractedData.noticeRef || prev.noticeRef,
-         language: prev.language
+        ...prev,
+        noticeType: extractedData.noticeType || prev.noticeType,
+        issue: extractedData.issue || prev.issue,
+        clientFacts: extractedData.clientFacts || prev.clientFacts,
+        strategy: extractedData.strategy ? extractedData.strategy.toLowerCase() : prev.strategy,
+        clientName: extractedData.clientName || prev.clientName,
+        noticeRef: extractedData.noticeRef || prev.noticeRef,
+        language: prev.language
       }));
       setErrors({});
     } catch (err) {
@@ -225,19 +225,19 @@ function InputForm({ onGenerate, loading, initialData = null }) {
       </div>
       <div className="panel-body form-layout">
         <form onSubmit={handleSubmit} className="form-main">
-          
-          <div 
-            className={`dropzone ${dragActive ? 'drag-active' : ''}`} 
-            onDragEnter={handleDrag} 
-            onDragLeave={handleDrag} 
-            onDragOver={handleDrag} 
+
+          <div
+            className={`dropzone ${dragActive ? 'drag-active' : ''}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
             onDrop={handleDrop}
           >
-            <input 
-              type="file" 
-              id="file-upload" 
-              multiple={false} 
-              onChange={handleFileChange} 
+            <input
+              type="file"
+              id="file-upload"
+              multiple={false}
+              onChange={handleFileChange}
               accept=".pdf, image/jpeg, image/png"
             />
             <label htmlFor="file-upload" className="dropzone-label">
@@ -262,54 +262,54 @@ function InputForm({ onGenerate, loading, initialData = null }) {
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>OR</span>
               <hr style={{ flex: 1, border: 'none', borderTop: '1px solid var(--surface-border)', width: '100px' }} />
             </div>
-            
-            <button 
-              type="button" 
-              onClick={() => isListening ? setIsListening(false) : startVoiceAssistant()} 
+
+            <button
+              type="button"
+              onClick={() => isListening ? setIsListening(false) : startVoiceAssistant()}
               className="btn"
-              style={{ 
+              style={{
                 marginTop: '1rem',
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                gap: '8px', 
-                padding: '10px 20px', 
-                borderRadius: '30px', 
-                border: '1px solid ' + (isListening ? 'var(--danger)' : 'var(--primary)'), 
-                color: isListening ? 'white' : 'var(--primary)', 
-                background: isListening ? 'var(--danger)' : 'transparent', 
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                borderRadius: '30px',
+                border: '1px solid ' + (isListening ? 'var(--danger)' : 'var(--primary)'),
+                color: isListening ? 'white' : 'var(--primary)',
+                background: isListening ? 'var(--danger)' : 'transparent',
                 fontWeight: '600',
                 transition: 'all 0.3s ease',
                 boxShadow: isListening ? '0 0 15px rgba(239, 68, 68, 0.4)' : 'none'
               }}
             >
               <Mic size={18} />
-              {isListening 
-                ? (voiceStep !== null ? voiceQuestions[voiceStep].text : "Stop Listening") 
-                : "Talk to AI Assistant"}
+              {isListening
+                ? (voiceStep !== null ? voiceQuestions[voiceStep].text : "Stop Listening")
+                : "Talk to AI Assistant to Fill the Form"}
             </button>
           </div>
 
           <div className="form-row">
             <div className="form-group" style={{ flex: '1', marginBottom: '0' }}>
               <label className="form-label">Client Name</label>
-              <input 
+              <input
                 type="text"
-                name="clientName" 
-                className="form-select" 
+                name="clientName"
+                className="form-select"
                 placeholder="e.g. Acme Corp"
-                value={formData.clientName} 
+                value={formData.clientName}
                 onChange={handleChange}
               />
               {errors.clientName && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.clientName}</span>}
             </div>
             <div className="form-group" style={{ flex: '1', marginBottom: '0' }}>
               <label className="form-label">Notice Reference No.</label>
-              <input 
+              <input
                 type="text"
-                name="noticeRef" 
-                className="form-select" 
+                name="noticeRef"
+                className="form-select"
                 placeholder="e.g. ITBA/AST/S/143(3)"
-                value={formData.noticeRef} 
+                value={formData.noticeRef}
                 onChange={handleChange}
               />
               {errors.noticeRef && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.noticeRef}</span>}
@@ -318,10 +318,10 @@ function InputForm({ onGenerate, loading, initialData = null }) {
 
           <div className="form-group">
             <label className="form-label">Notice Type</label>
-            <select 
-              name="noticeType" 
-              className="form-select" 
-              value={formData.noticeType} 
+            <select
+              name="noticeType"
+              className="form-select"
+              value={formData.noticeType}
               onChange={handleChange}
             >
               <option value="">Select Notice Type</option>
@@ -336,9 +336,9 @@ function InputForm({ onGenerate, loading, initialData = null }) {
 
           <div className="form-group">
             <label className="form-label">Specific Issue Raised</label>
-            <textarea 
-              name="issue" 
-              className="form-textarea" 
+            <textarea
+              name="issue"
+              className="form-textarea"
               placeholder="e.g. Mismatch between GSTR-1 and GSTR-3B"
               value={formData.issue}
               onChange={handleChange}
@@ -352,9 +352,9 @@ function InputForm({ onGenerate, loading, initialData = null }) {
 
           <div className="form-group">
             <label className="form-label">Relevant Client Facts & Amounts</label>
-            <textarea 
-              name="clientFacts" 
-              className="form-textarea" 
+            <textarea
+              name="clientFacts"
+              className="form-textarea"
               placeholder="Provide context, years involved, and financial figures"
               value={formData.clientFacts}
               onChange={handleChange}
@@ -367,10 +367,10 @@ function InputForm({ onGenerate, loading, initialData = null }) {
 
           <div className="form-group">
             <label className="form-label">Desired Response Strategy</label>
-            <select 
-              name="strategy" 
-              className="form-select" 
-              value={formData.strategy} 
+            <select
+              name="strategy"
+              className="form-select"
+              value={formData.strategy}
               onChange={handleChange}
             >
               <option value="">Select Strategy</option>
@@ -385,25 +385,25 @@ function InputForm({ onGenerate, loading, initialData = null }) {
             <label className="form-label" style={{ marginBottom: 0, fontWeight: '600' }}>Output Language:</label>
             <div style={{ display: 'flex', gap: '1.5rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input 
-                  type="radio" 
-                  name="language" 
-                  value="English" 
-                  checked={formData.language === 'English'} 
-                  onChange={handleChange} 
+                <input
+                  type="radio"
+                  name="language"
+                  value="English"
+                  checked={formData.language === 'English'}
+                  onChange={handleChange}
                   style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
-                /> 
+                />
                 English
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input 
-                  type="radio" 
-                  name="language" 
-                  value="Hindi" 
-                  checked={formData.language === 'Hindi'} 
-                  onChange={handleChange} 
+                <input
+                  type="radio"
+                  name="language"
+                  value="Hindi"
+                  checked={formData.language === 'Hindi'}
+                  onChange={handleChange}
                   style={{ accentColor: 'var(--primary)', width: '16px', height: '16px' }}
-                /> 
+                />
                 Hindi
               </label>
             </div>
