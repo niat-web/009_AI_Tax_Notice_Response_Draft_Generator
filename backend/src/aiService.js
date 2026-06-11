@@ -162,8 +162,17 @@ Output ONLY valid JSON. Do not include markdown formatting like \`\`\`json.`;
 async function extractNoticeDetails(fileBuffer, mimeType) {
   try {
     const modelCandidates = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro-latest',
+      'gemini-1.5-flash-latest',
+      'gemini-1.5-flash-8b',
       'gemini-1.5-pro',
-      'gemini-1.5-flash'
+      'gemini-1.5-flash',
+      'gemini-pro-vision',
+      'gemini-pro',
+      'gemini-1.0-pro-vision',
+      'gemini-1.0-pro'
     ].filter(Boolean);
 
     let result = null;
