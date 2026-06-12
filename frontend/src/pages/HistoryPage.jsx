@@ -41,13 +41,13 @@ function HistoryPage() {
                 onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
                 style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                   <span style={{ fontWeight: '600', color: 'var(--primary)' }}>{item.notice_type}</span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                     {new Date(item.timestamp).toLocaleString()}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
                   <span><strong>Client:</strong> {item.client_name}</span>
                   <span><strong>Ref:</strong> {item.notice_ref}</span>
                 </div>

@@ -381,9 +381,9 @@ function InputForm({ onGenerate, loading, initialData = null }) {
             {errors.strategy && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.strategy}</span>}
           </div>
 
-          <div className="form-group" style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem', background: 'var(--surface-color)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--surface-border)' }}>
+          <div className="form-group" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', marginTop: '0.5rem', background: 'var(--surface-color)', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid var(--surface-border)' }}>
             <label className="form-label" style={{ marginBottom: 0, fontWeight: '600' }}>Output Language:</label>
-            <div style={{ display: 'flex', gap: '1.5rem' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
                 <input
                   type="radio"

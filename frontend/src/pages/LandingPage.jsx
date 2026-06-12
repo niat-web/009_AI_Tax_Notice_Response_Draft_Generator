@@ -22,7 +22,7 @@ function LandingPage() {
       </div>
 
       <h1 style={{
-        fontSize: '3.5rem',
+        fontSize: 'clamp(2rem, 8vw, 3.5rem)',
         lineHeight: '1.2',
         fontWeight: '800',
         color: 'var(--text-primary)',
@@ -34,7 +34,7 @@ function LandingPage() {
       </h1>
 
       <p style={{
-        fontSize: '1.15rem',
+        fontSize: 'clamp(1rem, 4vw, 1.15rem)',
         color: 'var(--text-secondary)',
         maxWidth: '750px',
         marginBottom: '3rem',
@@ -43,7 +43,7 @@ function LandingPage() {
         An exclusive automated solution for P.Suuresh & Associates. Input the notice type, specific issue, and client facts to instantly generate a professionally structured response letter. Free up senior CA bandwidth and empower junior staff to initiate responses efficiently.
       </p>
 
-      <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
+      <div style={{ display: 'flex', gap: '2rem', marginBottom: '3rem', fontSize: '0.95rem', color: 'var(--text-secondary)', flexWrap: 'wrap', justifyContent: 'center' }}>
         <div><strong style={{ color: 'var(--text-primary)' }}>2-3 Hours &rarr; 10 Mins</strong> Drafting Time</div>
         <div><strong style={{ color: 'var(--text-primary)' }}>Formal</strong> Legal Structuring</div>
       </div>
